@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+	<meta charset="UTF-8">
+	<title>Coffee Machine Project</title>
+	
+	<style>
+	div {
+		font-size: 20px;
+		text-align: center;
+		vertical-align: baseline;
+		width: 600px;
+		height: 120px;
+		background-color: lightgreen;
+	}
+	</style>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0"></script>
+</head>
+<body>
+<header>
+	<h1>Αυτόματος πωλητής ροφημάτων</h1><br><br>
+</header>
+
+<div>		<!-- η οθόνη του μηχανήματος -->
+<span id = "screen"></span>
+</div>
+
+
+
+<table>
+	<tr>
+	<td><br></td>
+	<td></td>
+	<td></td>
+	</tr>
+	<tr>
+		<td width=200><center><button id="espressobtn" class="drinkchoice">espresso</button></center></td>
+		<td width=200><center><button id="lattebtn" class="drinkchoice">latte</button></center></td>
+		<td width=200><center><button id="cappuccinobtn" class="drinkchoice">cappuccino</button></center></td>
+	</tr>
+	<tr>
+	<td><br></td>
+	<td></td>
+	<td></td>
+	</tr>
+	<tr>
+	<tr>
+		<td><center><button id="frappebtn" class="drinkchoice">frappe</button></center></td>
+		<td><center><button id="chocolatebtn" class="drinkchoice">chocolate</button></center></td>
+		<td><center><button id="hotteabtn" class="drinkchoice">hottea</button></center></td>
+	</tr>	
+</table>
+
+<!-- εάν δεν υπάρχει απόθεμα συστατικών να εμφανίζει μήνυμα να επιλέξεις άλλο ρόφημα -->
+
+<br><br><br>
+
+<table>
+	<tr>
+		<td width=120><center><img id="eur200" src="./images/eur2.jpg" width="50"></center></td>
+		<td width=120><center><img id="eur100" src="./images/eur1.jpg" width="50"></center></td>
+		<td width=120><center><img id="eur050" src="./images/eur050.jpg" width="50"></center></td>
+		<td width=120><center><img id="eur020" src="./images/eur020.jpg" width="50"></center></td>
+		<td width=120><center><img id="eur010" src="./images/eur010.jpg" width="50"></center></td>
+	</tr>
+		<tr>
+	<td><br></td>
+	<td></td>
+	<td></td>	
+	<td></td>
+	<td></td>
+	</tr>
+	<tr>
+		<td colspan=3><center><button id="pay">Πληρωμή</button></center></td>
+		<td colspan=2><center><button id="newOrder">Νέο ρόφημα</button></center></td>	
+	</tr>
+</table>
+
+<br><br>
+<table><tr><td width="300"><canvas id="apothemaChart" style="width:100%;height:300px"></canvas></td></tr></table>
+<p id="cash"></p>
+
+
+<script>	// λειτουργίες - function
+let screenEl = document.getElementById('screen');  
+
+screenEl.innerHTML = "<br><br>Πατήστε το κουμπί του ροφήματος που θέλετε";
+
+// δημιουργία αντικειμένου-object (menu) με τα συστατικά και τα κόστη 
+// μέσα στο μενού κάνω αντικείμενα τα ροφήματα και μέσα στα ροφήματα κάνω νέα αντικείμενα τα συστατικά και το κόστος
+const menu = {    				
+	espresso: {systatika: 	{water: 50, 	milk: 0, 	coffee: 18, choco: 0,	tea: 0,		cup: 1}, cost: 1.50},
+	latte: {systatika: 		{water: 200, 	milk: 150, 	coffee: 24, choco: 0,	tea: 0,		cup: 1}, cost: 2.10},
+	cappuccino: {systatika: {water: 250, 	milk: 100, 	coffee: 25, choco: 0,	tea: 0,		cup: 1}, cost: 1.80},
+	frappe: {systatika: 	{water: 260, 	milk: 0, 	coffee: 28, choco: 0,	tea: 0,		cup: 1}, cost: 1.60},
+	chocolate: {systatika: 	{water: 230, 	milk: 120, 	coffee: 0,	choco: 30, 	tea: 0,		cup: 1}, cost: 2.20},
+	hottea: {systatika: 	{water: 270, 	milk: 0, 	coffee: 0,	choco: 0,	tea: 15, 	cup: 1}, cost: 1.90},
+}; 
+
+// μέσα στο απόθεμα δημιουργώ αντικείμενα με τα υλικά που έχει η μηχανή
+let apothema = {water: 1000, milk: 500, coffee: 150, choco: 80, tea: 50, cup: 10}
+let tameio = 0;
+let paymentOk = 0;
+
+
+// το order θα παίρνει τιμή από το κουμπί του ροφήματος που θα πατάει ο χρήστης
+
+
+document.getElementById("espressobtn").onclick = function() {	
+    order = "espresso";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.milk < apothema.milk) {
+			if (systat.coffee < apothema.coffee) {
+				if (systat.cup < apothema.cup) {
+					screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+				} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+			}
+		}
+	}	
+};
+document.getElementById("lattebtn").onclick = function() {	
+    order = "latte";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.milk < apothema.milk) {
+			if (systat.coffee < apothema.coffee) {
+				if (systat.cup < apothema.cup) {
+					screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+				} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+			}
+		}
+	}	
+};
+document.getElementById("cappuccinobtn").onclick = function() {		
+    order = "cappuccino";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.milk < apothema.milk) {
+			if (systat.coffee < apothema.coffee) {
+				if (systat.cup < apothema.cup) {
+					screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+				} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+			}
+		}
+	}	
+};
+document.getElementById("frappebtn").onclick = function() {		
+    order = "frappe";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.coffee < apothema.coffee) {
+			if (systat.cup < apothema.cup) {
+				screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+			} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+		}
+	}	
+};
+document.getElementById("chocolatebtn").onclick = function() {		
+    order = "chocolate";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.milk < apothema.milk) {
+			if (systat.choco < apothema.choco) {
+				if (systat.cup < apothema.cup) {
+					screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+				} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+			}
+		}
+	}	
+};
+document.getElementById("hotteabtn").onclick = function() {		
+    order = "hottea";
+	console.log(`order = ${order}`);
+	const systat = menu[order].systatika;
+	if (systat.water < apothema.water) {
+		if (systat.tea < apothema.tea) {
+			if (systat.cup < apothema.cup) {
+				screenEl.innerHTML = `<br>Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"`;
+			} else		screenEl.innerHTML = `Δεν υπάρχουν τα απαιτούμενα υλικά,<br>παρακαλώ επιλέξτε κάποιο άλλο ρόφημα`;
+		}
+	}	
+};
+
+// πληρωμή
+let payment  = 0;		//μηδενισμός μετρητών
+let paymentEl = document.getElementById("payment");			// σύνδεση με την html
+
+document.getElementById("eur200").onclick = function() {		// μετρητής - counter
+	payment +=2;
+	console.log(`payment = ${payment}`);
+	screenEl.innerHTML = `Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"<br><br>έχετε εισάγει <b>${payment.toFixed(2)} €</b>`;
+};
+document.getElementById("eur100").onclick = function() {		
+	payment +=1;
+	console.log(`payment = ${payment}`);
+	screenEl.innerHTML = `Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"<br><br>έχετε εισάγει <b>${payment.toFixed(2)} €</b>`;
+};
+document.getElementById("eur050").onclick = function() {		
+	payment +=0.50;
+	console.log(`payment = ${payment}`);
+	screenEl.innerHTML = `Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"<br><br>έχετε εισάγει <b>${payment.toFixed(2)} €</b>`;
+};
+document.getElementById("eur020").onclick = function() {		
+	payment +=0.20;
+	console.log(`payment = ${payment}`);
+	screenEl.innerHTML = `Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"<br><br>έχετε εισάγει <b>${payment.toFixed(2)} €</b>`;
+};
+document.getElementById("eur010").onclick = function() {		
+	payment +=0.10;
+	console.log(`payment = ${payment}`);
+	screenEl.innerHTML = `Έχετε επιλέξει <b>${order}</b>, <br>παρακαλώ εισάγετε <b>${menu[order].cost.toFixed(2)} €</b> και<br>στην συνέχεια πατήστε το κουμπί "Πληρωμή"<br><br>έχετε εισάγει <b>${payment.toFixed(2)} €</b>`;
+};
+console.log(`paymentOk = ${paymentOk}`);
+
+//έλεγχος ότι πληρώθηκε η αξία του ροφήματος
+document.getElementById("pay").onclick = function() {
+	console.log(`order (button πληρωμή) = ${order}`);
+	console.log(`payment = ${payment}`);
+	let ordercost = menu[order].cost;
+	console.log(`ordercost = ${ordercost}`);
+	let restaA = payment - ordercost;
+	let restaB = ordercost - payment;
+	if (payment == ordercost) {
+		paymentOk = 1;
+		screenEl.innerHTML = `<br>Το ρόφημα σας είναι έτοιμο, <br>μπορείτε να το παραλάβετε<br>Ευχαριστούμε`;
+	} else if (payment > ordercost) {
+		paymentOk = 1;
+		screenEl.innerHTML = `Έχετε ρέστα ${restaA.toFixed(2)} €<br>Το ρόφημα σας είναι έτοιμο, <br>μπορείτε να το παραλάβετε<br><br><b>Ευχαριστούμε</b>`;
+	} else screenEl.innerHTML = `<br>Εισάγετε ακόμα ${restaB.toFixed(2)} € <br>και πατήστε το κουμπί "Πληρωμή"`;
+console.log(`paymentOk = ${paymentOk}`);
+};
+
+
+let cashEl = document.getElementById("cash");	
+
+document.getElementById("newOrder").onclick = function() {
+	let ordercost = menu[order].cost;
+	console.log(`order (button νέο ρόφημα) = ${order}`);
+	console.log(`payment (button νέο ρόφημα) = ${payment}`);	
+	console.log(`ordercost (button νέο ρόφημα) = ${ordercost}`);
+	const systat = menu[order].systatika;
+	if (paymentOk == 1) {			// αφαίρεση από την μηχανή τα συστατικά που χρησιμοποιήθηκαν
+		apothema.water -= systat.water;
+		apothema.milk -= systat.milk;
+		apothema.coffee -= systat.coffee;
+		apothema.choco -= systat.choco;
+		apothema.tea -= systat.tea;
+		apothema.cup -= systat.cup;
+		tameio += ordercost;
+		console.log(tameio);
+	
+		order = 0;
+		payment = 0;
+
+		cashEl.innerHTML = `Ταμείο ${tameio.toFixed(2)} €`;
+
+		// Chart
+		const waterVal = apothema.water / 1000 * 100;
+		const milkVal = apothema.milk / 500 * 100;
+		const coffeeVal = apothema.coffee / 150 * 100;
+		const chocoVal = apothema.choco / 80 * 100;
+		const teaVal = apothema.tea / 50 * 100;
+		const cupVal = apothema.cup / 10 * 100;
+		const xValues = ["Νερό", "Γάλα", "Καφές", "Σοκολάτα", "Τσάι", "Ποτήρια"];
+		const yValues = [waterVal, milkVal, coffeeVal, chocoVal, teaVal, cupVal];
+		const barColors = ["green"];
+
+		const ctx = document.getElementById('apothemaChart');
+    
+		if (apothemachart !== null) { 
+			apothemachart.destroy(); 
+		}
+		apothemachart = new Chart(ctx, {
+			type: "bar",
+			data: {
+				labels: xValues,
+				datasets: [{
+					backgroundColor: barColors,
+					data: yValues
+				}]
+			},
+		options: {
+			indexAxis: 'y',
+			plugins: {
+				legend: {display: false},
+				title: {
+					display: true,
+					text: "Απόθεμα υλικών (%)",
+					font: {size: 16}
+				}
+			}
+		}
+		});
+	}	
+};
+
+		// Chart
+		let apothemaChart = null;
+		const waterVal = apothema.water / 1000 * 100;
+		const milkVal = apothema.milk / 500 * 100;
+		const coffeeVal = apothema.coffee / 150 * 100;
+		const chocoVal = apothema.choco / 80 * 100;
+		const teaVal = apothema.tea / 50 * 100;
+		const cupVal = apothema.cup / 10 * 100;
+		const xValues = ["Νερό", "Γάλα", "Καφές", "Σοκολάτα", "Τσάι", "Ποτήρια"];
+		const yValues = [waterVal, milkVal, coffeeVal, chocoVal, teaVal, cupVal];
+		const barColors = ["green"];
+
+		const ctx = document.getElementById('apothemaChart');
+    
+		apothemachart = new Chart(ctx, {
+			type: "bar",
+			data: {
+				labels: xValues,
+				datasets: [{
+					backgroundColor: barColors,
+					data: yValues
+				}]
+			},
+		options: {
+			indexAxis: 'y',
+			plugins: {
+				legend: {display: false},
+				title: {
+					display: true,
+					text: "Απόθεμα υλικών",
+					font: {size: 16}
+				}
+			}
+		}
+		});
+
+	
+</script>
+</body>
+</html>

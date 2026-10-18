@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Προσομοίωση ΑΤΜ</title>
+    <style>
+        :root {
+            --atm-bg: #1a1a24;
+            --screen-bg: #0d2b1d;
+            --screen-text: #39ff14;
+            --button-color: #4a4a5a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        /* Το σώμα του ΑΤΜ */
+        .atm-container {
+            background-color: var(--atm-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 450px;
+            border: 4px solid #34495e;
+        }
+
+        /* Η οθόνη του ΑΤΜ */
+        .atm-screen {
+            background-color: var(--screen-bg);
+            border: 5px solid #222;
+            border-radius: 5px;
+            padding: 20px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .screen-output {
+            color: var(--screen-text);
+            font-size: 1.1rem;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        /* Περιοχή Εισαγωγής Στοιχείων */
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .atm-input {
+            flex: 1;
+            padding: 12px;
+            font-size: 1.1rem;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #000;
+            text-align: center;
+        }
+
+        .atm-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .atm-btn:hover {
+            background-color: #219653;
+        }
+
+        /* Κουμπιά Ναι/Όχι για επιπλέον συναλλαγή */
+        .choice-buttons {
+            display: none;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn-yes { background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .btn-no { background-color: #c0392b; color: white; border: none; padding: 10px 25px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .btn-yes:hover { background-color: #219653; }
+        .btn-no:hover { background-color: #a93226; }
+
+        /* Στατιστικά Αποθέματος ΑΤΜ */
+        .atm-vault {
+            margin-top: 25px;
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed #7f8c8d;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.9rem;
+        }
+        .vault-title {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Προσομοιωτής ΑΤΜ</h1>
+    
+    <div class="atm-container">
+        <!-- Οθόνη -->
+        <div class="atm-screen">
+            <div class="screen-output" id="screen-text">Φόρτωση συστήματος...</div>
+        </div>
+
+        <!-- Φόρμα Εισαγωγής (Κάρτα, PIN, Ποσό) -->
+        <div class="input-area" id="input-container">
+            <input type="password" id="atm-input" class="atm-input" placeholder="" autocomplete="off">
+            <button class="atm-btn" id="submit-btn" onclick="handleInput()">OK</button>
+        </div>
+
+        <!-- Κουμπιά Επιλογής Ναι/Όχι -->
+        <div class="choice-buttons" id="choice-container">
+            <button class="btn-yes" onclick="handleChoice(true)">ΝΑΙ</button>
+            <button class="btn-no" onclick="handleChoice(false)">ΟΧΙ</button>
+        </div>
+
+        <!-- Ένδειξη Αποθέματος (Για λόγους ελέγχου/testing) -->
+        <div class="vault-title" style="margin-top: 20px;">Απόθεμα Χαρτονομισμάτων (Διαχειριστής)</div>
+        <div class="atm-vault">
+            <div>Χαρτονομίσματα 50€: <span id="vault-50">100</span></div>
+            <div>Χαρτονομίσματα 20€: <span id="vault-20">100</span></div>
+        </div>
+    </div>
+
+    <script>
+        // Αρχικές Μεταβλητές Αποθέματος
+        let bills20 = 100;
+        let bills50 = 100;
+
+        // Μεταβλητές Κατάστασης (State) Χρήστη
+        let currentStep = "CARD"; // Πιθανές τιμές: CARD, PIN, AMOUNT, EXTRA_TRANSACTION
+        let cardNumber = "";
+        let correctPin = "";
+
+        // Στοιχεία DOM
+        const screenText = document.getElementById("screen-text");
+        const atmInput = document.getElementById("atm-input");
+        const inputContainer = document.getElementById("input-container");
+        const choiceContainer = document.getElementById("choice-container");
+        const vault50 = document.getElementById("vault-50");
+        const vault20 = document.getElementById("vault-20");
+
+        // Εκκίνηση του ΑΤΜ
+        function initATM() {
+            currentStep = "CARD";
+            cardNumber = "";
+            correctPin = "";
+            atmInput.value = "";
+            atmInput.type = "text";
+            atmInput.maxLength = 16;
+            atmInput.placeholder = "16 ψηφία";
+            inputContainer.style.display = "flex";
+            choiceContainer.style.display = "none";
+            
+            screenText.innerText = "ΚΑΛΩΣΗΡΘΑΤΕ!\n\nΠαρακαλώ εισάγετε τον αριθμό της κάρτας σας (16 ψηφία) και πατήστε OK:";
+            updateVaultDisplay();
+        }
+
+        // Ενημέρωση των counter του αποθέματος στην οθόνη
+        function updateVaultDisplay() {
+            vault50.innerText = bills50;
+            vault20.innerText = bills20;
+        }
+
+        // Διαχείριση της κύριας εισαγωγής (Όταν πατάει OK)
+        function handleInput() {
+            const value = atmInput.value.trim();
+
+            if (currentStep === "CARD") {
+                // Έλεγχος Κάρτας
+                if (value.length === 16 && !isNaN(value)) {
+                    cardNumber = value;
+                    correctPin = cardNumber.slice(-4); // Τα 4 τελευταία ψηφία
+                    
+                    // Μετάβαση στο PIN
+                    currentStep = "PIN";
+                    atmInput.value = "";
+                    atmInput.type = "password";
+                    atmInput.maxLength = 4;
+                    atmInput.placeholder = "4 ψηφία";
+                    screenText.innerText = "ΚΑΡΤΑ ΔΕΚΤΗ.\n\nΠαρακαλώ πληκτρολογήστε το PIN σας (τα 4 τελευταία ψηφία της κάρτας):";
+                } else {
+                    screenText.innerText = "ΛΑΘΟΣ ΑΡΙΘΜΟΣ ΚΑΡΤΑΣ!\n\nΠρέπει να πληκτρολογήσετε ακριβώς 16 ψηφία.\nΠροσπαθήστε ξανά:";
+                    atmInput.value = "";
+                }
+            } 
+            else if (currentStep === "PIN") {
+                // Έλεγχος PIN
+                if (value === correctPin) {
+                    // Μετάβαση στο Ποσό Αναλήψης
+                    currentStep = "AMOUNT";
+                    atmInput.value = "";
+                    atmInput.type = "text";
+                    atmInput.maxLength = 6;
+                    atmInput.placeholder = "Ποσό σε €";
+                    screenText.innerText = "ΕΓΚΥΡΟ PIN.\n\nΠληκτρολογήστε το ποσό που επιθυμείτε για ανάληψη (χαρτονομίσματα των 20€ και 50€):";
+                } else {
+                    screenText.innerText = "ΛΑΘΟΣ PIN!\n\nΠαρακαλώ προσπαθήστε ξανά:";
+                    atmInput.value = "";
+                }
+            } 
+            else if (currentStep === "AMOUNT") {
+                // Έλεγχος Ποσού
+                const amount = parseInt(value);
+
+                if (isNaN(amount) || amount <= 0) {
+                    screenText.innerText = "ΜΗ ΕΓΚΥΡΟ ΠΟΣΟ!\n\nΞαναπληκτρολογήστε σωστά το ποσό:";
+                    atmInput.value = "";
+                    return;
+                }
+
+                // Αλγόριθμος υπολογισμού χαρτονομισμάτων
+                let dispense50 = 0;
+                let dispense20 = 0;
+                let temp50 = Math.min(Math.floor(amount / 50), bills50);
+                let foundCombination = false;
+
+                while (temp50 >= 0) {
+                    let remainder = amount - (temp50 * 50);
+                    if (remainder % 20 === 0) {
+                        let temp20 = remainder / 20;
+                        if (temp20 <= bills20) {
+                            dispense50 = temp50;
+                            dispense20 = temp20;
+                            foundCombination = true;
+                            break;
+                        }
+                    }
+                    temp50--;
+                }
+
+                if (foundCombination) {
+                    // Επιτυχής Ανάληψη -> Μείωση αποθέματος
+                    bills50 -= dispense50;
+                    bills20 -= dispense20;
+                    updateVaultDisplay();
+
+                    screenText.innerText = `Η ΑΝΑΛΗΨΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΈκδοση:\n- ${dispense50} χαρτονομίσματα των 50€\n- ${dispense20} χαρτονομίσματα των 20€\n\nΘέλετε να κάνετε κάποια επιπλέον συναλλαγή;`;
+                    
+                    // Μετάβαση στην ερώτηση επιπλέον συναλλαγής (Εναλλαγή UI σε Ναι/Όχι)
+                    currentStep = "EXTRA_TRANSACTION";
+                    inputContainer.style.display = "none";
+                    choiceContainer.style.display = "flex";
+                } else {
+                    screenText.innerText = "ΑΔΥΝΑΜΙΑ ΕΞΥΠΗΡΕΤΗΣΗΣ ΠΟΣΟΥ!\n\nΤο ποσό δεν βγαίνει με 20€/50€ ή το ΑΤΜ δεν έχει αρκετό απόθεμα.\n\nΞαναπληκτρολογήστε άλλο ποσό:";
+                    atmInput.value = "";
+                }
+            }
+        }
+
+        // Διαχείριση των κουμπιών Ναι / Όχι
+        function handleChoice(wantsExtra) {
+            if (wantsExtra) {
+                // Επιστροφή στο βήμα του ποσού για τον ίδιο χρήστη
+                currentStep = "AMOUNT";
+                atmInput.value = "";
+                atmInput.type = "text";
+                atmInput.maxLength = 6;
+                atmInput.placeholder = "Ποσό σε €";
+                inputContainer.style.display = "flex";
+                choiceContainer.style.display = "none";
+                screenText.innerText = "Πληκτρολογήστε το επόμενο ποσό που επιθυμείτε για ανάληψη:";
+            } else {
+                // Έξοδος χρήστη
+                inputContainer.style.display = "none";
+                choiceContainer.style.display = "none";
+                screenText.innerText = "ΠΑΡΑΚΑΛΩ ΠΑΡΤΕ ΤΗΝ ΚΑΡΤΑ ΣΑΣ!\n\nΣας ευχαριστούμε για τη συναλλαγή.";
+                
+                // Αναμονή 4 δευτερολέπτων και επαναφορά για τον επόμενο πελάτη
+                setTimeout(() => {
+                    initATM();
+                }, 4000);
+            }
+        }
+
+        // Υποστήριξη του πλήκτρου 'Enter' στο πληκτρολόγιο
+        atmInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                handleInput();
+            }
+        });
+
+        // Εκκίνηση της σελίδας
+        window.onload = initATM;
+    </script>
+</body>
+</html>

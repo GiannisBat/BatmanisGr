@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoffeeMate Pro – Αυτόματος Πωλητής Ροφημάτων</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f5ede3 0%, #ede0d0 50%, #e8d5c0 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      padding: 20px;
+    }
+
+    .machine {
+      background: #ffffff;
+      border-radius: 22px;
+      padding: 28px 24px;
+      width: 100%; max-width: 500px;
+      box-shadow: 0 0 0 3px #e8d5c0, 0 0 0 5px #f5ede3, 0 20px 60px rgba(160,100,50,.15);
+    }
+
+    /* --- Header --- */
+    .machine-header { text-align: center; margin-bottom: 22px; }
+    .machine-header h1 { font-size: 22px; font-weight: 700; letter-spacing: 3px; color: #7a4a18; }
+    .machine-header p  { font-size: 12px; color: #b08060; letter-spacing: 2px; margin-top: 3px; }
+
+    /* --- Screen --- */
+    .screen {
+      background: #fdf6ec; border: 2px solid #d4b896; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 22px; min-height: 72px;
+      box-shadow: inset 0 2px 8px rgba(180,120,60,.08);
+    }
+    .screen-title { font-family: 'Share Tech Mono', monospace; color: #b08060; font-size: 12px; letter-spacing: 3px; opacity: .8; margin-bottom: 5px; }
+    .screen-msg   { font-family: 'Share Tech Mono', monospace; color: #4a2e10; font-size: 17px; line-height: 1.6; }
+    .screen-msg strong { color: #8a4a10; }
+
+    /* --- Section label --- */
+    .lbl { color: #b08060; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+
+    /* --- Drink grid --- */
+    .drink-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; margin-bottom: 20px; }
+
+    .drink-btn {
+      background: linear-gradient(145deg, #fdf0e0, #f5e4cc);
+      border: 1px solid #d4b896; color: #7a4a18; border-radius: 10px;
+      padding: 13px 6px; cursor: pointer; font-family: 'Outfit', sans-serif;
+      font-size: 14px; font-weight: 500; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      transition: all .2s;
+    }
+    .drink-btn:hover { border-color: #a0622a; color: #5a3010; transform: translateY(-2px); box-shadow: 0 4px 14px rgba(160,98,42,.2); }
+    .drink-btn.selected { background: linear-gradient(145deg, #f0d8b0, #e8c890); border-color: #a0622a; color: #5a3010; box-shadow: 0 0 12px rgba(160,98,42,.25); }
+    .drink-btn.unavailable { opacity: .35; cursor: not-allowed; pointer-events: none; }
+    .drink-btn .ico  { font-size: 26px; }
+    .drink-btn .prc  { font-size: 12px; color: #b08060; }
+    .drink-btn.selected .prc { color: #7a4a18; }
+
+    /* --- Divider --- */
+    .divider { height: 1px; background: linear-gradient(90deg,transparent,#d4b896,transparent); margin: 18px 0; }
+
+    /* --- Payment section --- */
+    .payment-section { display: none; }
+    .payment-section.visible { display: block; animation: fadeUp .3s ease; }
+
+    .coin-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; margin-bottom: 14px; }
+    .coin-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+    .coin-img  { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #d4b896; object-fit: cover; transition: all .2s; }
+    .coin-item:hover .coin-img { border-color: #a0622a; transform: scale(1.1); box-shadow: 0 0 12px rgba(160,98,42,.3); }
+    .coin-cnt  { font-family: 'Share Tech Mono', monospace; color: #a0622a; font-size: 15px; }
+    .coin-lbl  { font-size: 11px; color: #b08060; }
+
+    .pay-info { background: #fdf6ec; border: 1px solid #d4b896; border-radius: 8px; padding: 11px 15px; margin-bottom: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .pay-info .lbl2 { color: #b08060; font-size: 15px; }
+    .pay-info .val  { font-family: 'Share Tech Mono', monospace; color: #2a6e20; font-size: 20px; font-weight: 700; }
+
+    .btn-pay {
+      width: 100%; background: linear-gradient(135deg, #c07828, #a05c14);
+      color: #fff; border: none; border-radius: 10px; padding: 13px;
+      font-size: 17px; font-weight: 600; font-family: 'Outfit', sans-serif;
+      cursor: pointer; letter-spacing: 1px; transition: all .2s; margin-bottom: 9px;
+    }
+    .btn-pay:hover { background: linear-gradient(135deg, #d48830, #b86c20); box-shadow: 0 4px 18px rgba(192,120,40,.35); }
+    .btn-pay:active { transform: scale(.98); }
+
+    .btn-new {
+      display: none; width: 100%;
+      background: linear-gradient(135deg, #eaf5ea, #d5ecd5);
+      color: #1a7a30; border: 1px solid #7dc87d; border-radius: 10px;
+      padding: 11px; font-size: 16px; font-weight: 600; font-family: 'Outfit', sans-serif;
+      cursor: pointer; letter-spacing: 1px; transition: all .2s;
+    }
+    .btn-new:hover { background: linear-gradient(135deg, #d5ecd5, #c0e0c0); box-shadow: 0 4px 14px rgba(50,150,70,.2); }
+    .btn-new.visible { display: block; }
+
+    /* --- Inventory --- */
+    .inv-panel { margin-top: 18px; background: #faf5ef; border: 1px solid #e0ccb4; border-radius: 8px; padding: 11px 13px; }
+    .inv-title { color: #b08060; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+    .inv-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; }
+    .inv-item  { text-align: center; }
+    .inv-item .in  { color: #b08060; font-size: 12px; }
+    .inv-item .iv  { font-family: 'Share Tech Mono', monospace; color: #7a4a18; font-size: 13px; }
+    .inv-item .iv.low { color: #cc3300; }
+
+    /* --- Animations --- */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes msgIn  { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+    .msg-anim { animation: msgIn .3s ease; }
+
+    /* --- Report Button --- */
+    .btn-report {
+      display: block; width: 100%; margin-top: 12px;
+      background: linear-gradient(135deg, #eaf0fc, #d8e8f8);
+      color: #2255cc; border: 1px solid #9ab8e8; border-radius: 10px;
+      padding: 11px; font-size: 16px; font-weight: 600; font-family: 'Outfit', sans-serif;
+      cursor: pointer; letter-spacing: 1px; transition: all .2s;
+    }
+    .btn-report:hover { background: linear-gradient(135deg, #d8e8f8, #c5daf5); box-shadow: 0 4px 14px rgba(50,100,220,.15); }
+
+    /* --- Report Modal --- */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(200,160,100,.35); backdrop-filter: blur(4px);
+      z-index: 100; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; animation: fadeUp .25s ease; }
+
+    .modal {
+      background: #ffffff;
+      border: 1px solid #e0ccb4; border-radius: 18px;
+      padding: 28px 24px; width: 100%; max-width: 420px; margin: 20px;
+      box-shadow: 0 0 0 2px #f5ede3, 0 20px 60px rgba(160,100,50,.2);
+    }
+    .modal-title {
+      font-size: 19px; font-weight: 700; color: #2255cc;
+      letter-spacing: 2px; text-align: center; margin-bottom: 22px;
+    }
+    .report-money {
+      background: #f0faf0; border: 1px solid #9ad09a; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 18px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .report-money .rlbl { color: #6a9060; font-size: 15px; }
+    .report-money .rval {
+      font-family: 'Share Tech Mono', monospace; color: #1a6a20;
+      font-size: 25px; font-weight: 700;
+    }
+    .report-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .report-table th {
+      font-size: 11px; letter-spacing: 2px; color: #b08060;
+      text-transform: uppercase; padding: 0 6px 8px; text-align: left;
+    }
+    .report-table th:last-child { text-align: right; }
+    .report-table td {
+      font-family: 'Share Tech Mono', monospace; font-size: 14px;
+      padding: 7px 6px; border-top: 1px solid #eee; color: #666;
+    }
+    .report-table td:last-child { text-align: right; }
+    .report-table .need { color: #cc5500; font-weight: 600; }
+    .report-table .full { color: #1a8a30; font-weight: 600; }
+    .report-table .ing  { color: #4a2e10; }
+    .btn-close {
+      width: 100%; background: linear-gradient(135deg, #fdf0f0, #f5dede);
+      color: #cc3333; border: 1px solid #e8aaaa; border-radius: 10px;
+      padding: 11px; font-size: 16px; font-weight: 600; font-family: 'Outfit', sans-serif;
+      cursor: pointer; letter-spacing: 1px; transition: all .2s;
+    }
+    .btn-close:hover { background: linear-gradient(135deg, #f5dede, #eecdcd); box-shadow: 0 4px 14px rgba(200,60,60,.15); }
+  </style>
+</head>
+<body>
+
+<div class="machine">
+
+  <!-- Header -->
+  <div class="machine-header">
+    <h1>☕ CoffeeMate Pro</h1>
+    <p>ΑΥΤΟΜΑΤΟΣ ΠΩΛΗΤΗΣ ΡΟΦΗΜΑΤΩΝ</p>
+  </div>
+
+  <!-- Display Screen -->
+  <div class="screen">
+    <div class="screen-title">STATUS</div>
+    <div class="screen-msg" id="screenMsg">Καλώς ήρθατε! Επιλέξτε το ρόφημά σας...</div>
+  </div>
+
+  <!-- Drink Buttons -->
+  <div class="lbl">Επιλογή Ροφήματος</div>
+  <div class="drink-grid">
+    <button class="drink-btn" id="btn-espresso"   onclick="selectDrink('espresso')">  <span class="ico">☕</span><span>Espresso</span>  <span class="prc">1,50 €</span></button>
+    <button class="drink-btn" id="btn-latte"       onclick="selectDrink('latte')">    <span class="ico">🥛</span><span>Latte</span>      <span class="prc">2,10 €</span></button>
+    <button class="drink-btn" id="btn-cappuccino"  onclick="selectDrink('cappuccino')"><span class="ico">☕</span><span>Cappuccino</span><span class="prc">1,80 €</span></button>
+    <button class="drink-btn" id="btn-frappe"      onclick="selectDrink('frappe')">   <span class="ico">🧋</span><span>Frappe</span>    <span class="prc">1,60 €</span></button>
+    <button class="drink-btn" id="btn-chocolate"   onclick="selectDrink('chocolate')"><span class="ico">🍫</span><span>Chocolate</span> <span class="prc">2,20 €</span></button>
+    <button class="drink-btn" id="btn-hottea"      onclick="selectDrink('hottea')">   <span class="ico">🍵</span><span>Hot Tea</span>   <span class="prc">1,90 €</span></button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Payment Section -->
+  <div class="payment-section" id="paymentSection">
+    <div class="lbl">Εισαγωγή Κερμάτων — Πατήστε για να εισάγετε</div>
+    <div class="coin-grid">
+      <div class="coin-item" onclick="insertCoin(2.00,'count200')">
+        <img class="coin-img" src="./images/eur2.jpg" alt="2€">
+        <div class="coin-cnt" id="count200">0</div>
+        <div class="coin-lbl">2,00 €</div>
+      </div>
+      <div class="coin-item" onclick="insertCoin(1.00,'count100')">
+        <img class="coin-img" src="./images/eur1.jpg" alt="1€">
+        <div class="coin-cnt" id="count100">0</div>
+        <div class="coin-lbl">1,00 €</div>
+      </div>
+      <div class="coin-item" onclick="insertCoin(0.50,'count050')">
+        <img class="coin-img" src="./images/eur050.jpg" alt="0,50€">
+        <div class="coin-cnt" id="count050">0</div>
+        <div class="coin-lbl">0,50 €</div>
+      </div>
+      <div class="coin-item" onclick="insertCoin(0.20,'count020')">
+        <img class="coin-img" src="./images/eur020.jpg" alt="0,20€">
+        <div class="coin-cnt" id="count020">0</div>
+        <div class="coin-lbl">0,20 €</div>
+      </div>
+      <div class="coin-item" onclick="insertCoin(0.10,'count010')">
+        <img class="coin-img" src="./images/eur010.jpg" alt="0,10€">
+        <div class="coin-cnt" id="count010">0</div>
+        <div class="coin-lbl">0,10 €</div>
+      </div>
+    </div>
+
+    <div class="pay-info">
+      <span class="lbl2">Εισήχθηκαν:</span>
+      <span class="val" id="payDisplay">0,00 €</span>
+    </div>
+
+    <button class="btn-pay" id="btnPay" onclick="processPayment()">💳 Πληρωμή</button>
+  </div>
+
+  <button class="btn-new" id="btnNew" onclick="newOrder()">🔄 Νέο Ρόφημα</button>
+  <button class="btn-report" onclick="showReport()">📊 Report — Αναφορά Μηχανής</button>
+
+  <!-- Inventory display -->
+  <div class="inv-panel">
+    <div class="inv-title">Απόθεμα Υλικών</div>
+    <div class="inv-grid">
+      <div class="inv-item"><div class="in">💧 Νερό</div>    <div class="iv" id="inv-water"></div></div>
+      <div class="inv-item"><div class="in">🥛 Γάλα</div>    <div class="iv" id="inv-milk"></div></div>
+      <div class="inv-item"><div class="in">☕ Καφές</div>   <div class="iv" id="inv-coffee"></div></div>
+      <div class="inv-item"><div class="in">🍫 Choco</div>   <div class="iv" id="inv-choco"></div></div>
+      <div class="inv-item"><div class="in">🍵 Τσάι</div>    <div class="iv" id="inv-tea"></div></div>
+      <div class="inv-item"><div class="in">🥤 Ποτήρια</div> <div class="iv" id="inv-cup"></div></div>
+    </div>
+  </div>
+
+</div><!-- /machine -->
+
+<!-- Report Modal -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-title">📊 ΑΝΑΦΟΡΑ ΜΗΧΑΝΗΣ</div>
+
+    <div class="report-money">
+      <span class="rlbl">💰 Συνολικά Έσοδα:</span>
+      <span class="rval" id="rpt-tameio">0,00 €</span>
+    </div>
+
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Υλικό</th>
+          <th>Απόθεμα</th>
+          <th>Χωρητικότητα</th>
+          <th>Συμπλήρωση</th>
+        </tr>
+      </thead>
+      <tbody id="rpt-tbody"></tbody>
+    </table>
+
+    <button class="btn-close" onclick="closeReport()">✖ Κλείσιμο</button>
+  </div>
+</div>
+
+<script>
+  // =====================================================
+  //  ΔΕΔΟΜΕΝΑ
+  // =====================================================
+  const menu = {
+    espresso:  { systatika: { water: 50,  milk: 0,   coffee: 18, cup: 1 }, cost: 1.50 },
+    latte:     { systatika: { water: 200, milk: 150, coffee: 24, cup: 1 }, cost: 2.10 },
+    cappuccino:{ systatika: { water: 250, milk: 100, coffee: 25, cup: 1 }, cost: 1.80 },
+    frappe:    { systatika: { water: 260, milk: 0,   coffee: 28, cup: 1 }, cost: 1.60 },
+    chocolate: { systatika: { water: 230, milk: 120, choco: 30,  cup: 1 }, cost: 2.20 },
+    hottea:    { systatika: { water: 270, tea: 15,              cup: 1 }, cost: 1.90 },
+  };
+
+  const NAMES  = { espresso:'Espresso', latte:'Latte', cappuccino:'Cappuccino', frappe:'Frappe', chocolate:'Chocolate', hottea:'Hot Tea' };
+  const EMOJIS = { espresso:'☕', latte:'🥛', cappuccino:'☕', frappe:'🧋', chocolate:'🍫', hottea:'🍵' };
+  const LOW    = { water: 200, milk: 100, coffee: 40, choco: 20, tea: 15, cup: 2 };
+  const UNITS  = { water: ' ml', milk: ' ml', coffee: ' g', choco: ' g', tea: ' g', cup: '' };
+
+  let apothema = { water: 1000, milk: 500, coffee: 150, choco: 80, tea: 50, cup: 10 };
+  let tameio   = 0;
+
+  // State
+  let currentDrink = null;
+  let payment      = 0;
+  let paid         = false; // true after successful payment
+
+  // =====================================================
+  //  HELPERS
+  // =====================================================
+  function fmt(num) { return num.toFixed(2).replace('.', ',') + ' €'; }
+
+  function setScreen(html) {
+    const el = document.getElementById('screenMsg');
+    el.innerHTML = html;
+    el.classList.remove('msg-anim');
+    void el.offsetWidth;
+    el.classList.add('msg-anim');
+  }
+
+  function updateInventoryDisplay() {
+    ['water','milk','coffee','choco','tea','cup'].forEach(k => {
+      const el = document.getElementById('inv-' + k);
+      el.textContent = apothema[k] + UNITS[k];
+      el.classList.toggle('low', apothema[k] <= LOW[k]);
+    });
+  }
+
+  function missingIngredients(drink) {
+    const s = menu[drink].systatika;
+    const missing = [];
+    if ((s.water  || 0) > apothema.water)  missing.push('νερό');
+    if ((s.milk   || 0) > apothema.milk)   missing.push('γάλα');
+    if ((s.coffee || 0) > apothema.coffee) missing.push('καφέ');
+    if ((s.choco  || 0) > apothema.choco)  missing.push('σοκολάτα');
+    if ((s.tea    || 0) > apothema.tea)    missing.push('τσάι');
+    if ((s.cup    || 0) > apothema.cup)    missing.push('ποτήρια');
+    return missing;
+  }
+
+  function updateDrinkButtons() {
+    Object.keys(menu).forEach(drink => {
+      const btn = document.getElementById('btn-' + drink);
+      const miss = missingIngredients(drink);
+      btn.classList.toggle('unavailable', miss.length > 0);
+      btn.title = miss.length > 0 ? 'Δεν υπάρχει: ' + miss.join(', ') : '';
+    });
+  }
+
+  function resetPayment() {
+    payment = 0;
+    paid    = false;
+    ['count200','count100','count050','count020','count010'].forEach(id => {
+      document.getElementById(id).textContent = '0';
+    });
+    document.getElementById('payDisplay').textContent = '0,00 €';
+  }
+
+  // =====================================================
+  //  ΕΠΙΛΟΓΗ ΡΟΦΗΜΑΤΟΣ
+  // =====================================================
+  function selectDrink(drink) {
+    if (paid) return; // waiting for "new order"
+
+    // Deselect previous
+    if (currentDrink) document.getElementById('btn-' + currentDrink).classList.remove('selected');
+
+    const missing = missingIngredients(drink);
+    if (missing.length > 0) {
+      setScreen(`⚠️ Δεν υπάρχει αρκετό <strong>${missing.join(', ')}</strong>.<br>Παρακαλώ επιλέξτε άλλο ρόφημα.`);
+      currentDrink = null;
+      return;
+    }
+
+    currentDrink = drink;
+    document.getElementById('btn-' + drink).classList.add('selected');
+    resetPayment();
+
+    const cost = fmt(menu[drink].cost);
+    setScreen(`✅ Επιλέξατε: <strong>${NAMES[drink]} ${EMOJIS[drink]}</strong><br>Κόστος: <strong>${cost}</strong> — Εισάγετε κέρματα &amp; πατήστε Πληρωμή`);
+
+    document.getElementById('paymentSection').classList.add('visible');
+    document.getElementById('btnNew').classList.add('visible');
+  }
+
+  // =====================================================
+  //  ΕΙΣΑΓΩΓΗ ΚΕΡΜΑΤΟΣ
+  // =====================================================
+  function insertCoin(value, countId) {
+    if (!currentDrink) { setScreen('⚠️ Επιλέξτε πρώτα ρόφημα!'); return; }
+    if (paid)          return;
+
+    payment = Math.round((payment + value) * 100) / 100;
+    const el = document.getElementById(countId);
+    el.textContent = parseInt(el.textContent) + 1;
+    document.getElementById('payDisplay').textContent = fmt(payment);
+
+    const cost    = menu[currentDrink].cost;
+    const needed  = Math.max(0, cost - payment);
+    if (needed > 0) {
+      setScreen(`💰 Εισήχθηκαν: <strong>${fmt(payment)}</strong><br>Χρειάζεστε ακόμα: <strong>${fmt(needed)}</strong>`);
+    } else {
+      setScreen(`✅ Αρκετά κέρματα! Εισήχθηκαν: <strong>${fmt(payment)}</strong><br>Πατήστε <strong>Πληρωμή</strong> για να ολοκληρώσετε.`);
+    }
+  }
+
+  // =====================================================
+  //  ΠΛΗΡΩΜΗ
+  // =====================================================
+  function processPayment() {
+    if (!currentDrink) { setScreen('⚠️ Επιλέξτε πρώτα ρόφημα!'); return; }
+    if (paid)          return;
+
+    const cost = menu[currentDrink].cost;
+
+    if (payment < cost) {
+      const needed = fmt(cost - payment);
+      setScreen(`⚠️ Ανεπαρκές ποσό!<br>Εισάγετε ακόμα <strong>${needed}</strong> για να πληρώσετε.`);
+      return;
+    }
+
+    // --- Payment successful ---
+    paid   = true;
+    tameio = Math.round((tameio + cost) * 100) / 100;
+
+    // Deduct ingredients
+    const s = menu[currentDrink].systatika;
+    if (s.water)  apothema.water  -= s.water;
+    if (s.milk)   apothema.milk   -= s.milk;
+    if (s.coffee) apothema.coffee -= s.coffee;
+    if (s.choco)  apothema.choco  -= s.choco;
+    if (s.tea)    apothema.tea    -= s.tea;
+    if (s.cup)    apothema.cup    -= s.cup;
+
+    updateInventoryDisplay();
+    updateDrinkButtons();
+
+    // Disable coins
+    document.getElementById('paymentSection').classList.remove('visible');
+
+    const change = Math.round((payment - cost) * 100) / 100;
+    const changeLine = change > 0
+      ? `<br>💵 Τα ρέστα σας: <strong>${fmt(change)}</strong>`
+      : '';
+
+    setScreen(
+      `${EMOJIS[currentDrink]} Το <strong>${NAMES[currentDrink]}</strong> σας είναι έτοιμο!<br>` +
+      `Πληρώσατε: ${fmt(payment)} — Κόστος: ${fmt(cost)}${changeLine}<br>` +
+      `Ευχαριστούμε! 🙏`
+    );
+  }
+
+  // =====================================================
+  //  ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ
+  // =====================================================
+  function newOrder() {
+    if (currentDrink) document.getElementById('btn-' + currentDrink).classList.remove('selected');
+    currentDrink = null;
+    paid         = false;
+    resetPayment();
+
+    document.getElementById('paymentSection').classList.remove('visible');
+    document.getElementById('btnNew').classList.remove('visible');
+
+    setScreen('Καλώς ήρθατε! Επιλέξτε το ρόφημά σας...');
+  }
+
+  // =====================================================
+  //  REPORT
+  // =====================================================
+  const MAX = { water: 1000, milk: 500, coffee: 150, choco: 80, tea: 50, cup: 10 };
+  const RPT_LABELS = [
+    { key: 'water',  icon: '💧', name: 'Νερό',    unit: ' ml' },
+    { key: 'milk',   icon: '🥛', name: 'Γάλα',    unit: ' ml' },
+    { key: 'coffee', icon: '☕', name: 'Καφές',   unit: ' g'  },
+    { key: 'choco',  icon: '🍫', name: 'Choco',   unit: ' g'  },
+    { key: 'tea',    icon: '🍵', name: 'Τσάι',    unit: ' g'  },
+    { key: 'cup',    icon: '🥤', name: 'Ποτήρια', unit: ''    },
+  ];
+
+  function showReport() {
+    document.getElementById('rpt-tameio').textContent = fmt(tameio);
+
+    const tbody = document.getElementById('rpt-tbody');
+    tbody.innerHTML = '';
+    RPT_LABELS.forEach(({ key, icon, name, unit }) => {
+      const current = apothema[key];
+      const max     = MAX[key];
+      const refill  = max - current;
+      const isFull  = refill === 0;
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td class="ing">${icon} ${name}</td>` +
+        `<td>${current}${unit}</td>` +
+        `<td>${max}${unit}</td>` +
+        `<td class="${isFull ? 'full' : 'need'}">${isFull ? '✔ Πλήρες' : '+' + refill + unit}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('reportModal').classList.add('open');
+  }
+
+  function closeReport() {
+    document.getElementById('reportModal').classList.remove('open');
+  }
+
+  // Close modal when clicking outside
+  document.getElementById('reportModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReport();
+  });
+
+  // =====================================================
+  //  INIT
+  // =====================================================
+  updateInventoryDisplay();
+  updateDrinkButtons();
+</script>
+
+</body>
+</html>

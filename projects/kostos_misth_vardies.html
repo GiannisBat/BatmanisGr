@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Υπολογισμός Μισθοδοσίας – 3 Βάρδιες</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1f2435;
+    --border: #2a3045;
+    --accent: #3b82f6;
+    --accent2: #10b981;
+    --accent3: #f59e0b;
+    --text: #e2e8f0;
+    --text2: #8892a4;
+    --text3: #4a5568;
+    --red: #ef4444;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  /* Header */
+  .header {
+    max-width: 1400px;
+    margin: 0 auto 2.5rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .header-left h1 {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .header-left p {
+    font-size: 0.8rem;
+    color: var(--text2);
+    margin-top: 0.3rem;
+  }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    background: rgba(59,130,246,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(59,130,246,0.3);
+    margin-top: 0.4rem;
+  }
+
+  /* Params panel */
+  .params-panel {
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .param-item {
+    background: var(--surface);
+    padding: 0.9rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .param-label {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .param-input {
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    padding: 0;
+  }
+  .param-input:focus { color: #60a5fa; }
+  .param-note {
+    font-size: 0.65rem;
+    color: var(--text3);
+  }
+
+  /* Section title */
+  .section-title {
+    max-width: 1400px;
+    margin: 0 auto 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Main table wrapper */
+  .table-wrap {
+    margin: 0 auto 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    min-width: 0;
+  }
+  thead tr {
+    background: var(--surface2);
+  }
+  th {
+    padding: 0.55rem 0.7rem;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th.left { text-align: left; }
+  /* color-coded header groups */
+  th.grp-time { color: #94a3b8; }
+  th.grp-hours { color: #60a5fa; }
+  th.grp-cost { color: #34d399; }
+  th.grp-total { color: #fbbf24; }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(42,48,69,0.6);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  /* Day group separators */
+  tbody tr.day-first td { border-top: 1px solid var(--border); }
+
+  td {
+    padding: 0.45rem 0.7rem;
+    text-align: center;
+    color: var(--text2);
+    vertical-align: middle;
+  }
+  td.label-cell {
+    text-align: left;
+    color: var(--text);
+    font-size: 0.72rem;
+    white-space: nowrap;
+    min-width: 170px;
+  }
+  td.label-cell .vardio {
+    display: inline-block;
+    font-size: 0.58rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 2px;
+    margin-left: 0.4rem;
+    vertical-align: middle;
+  }
+  .vardio.proi  { background: rgba(96,165,250,0.1); color: #60a5fa; }
+  .vardio.apog  { background: rgba(251,191,36,0.1); color: #fbbf24; }
+  .vardio.bradu { background: rgba(167,139,250,0.1); color: #a78bfa; }
+
+  input.atoms-in {
+    width: 44px;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.25);
+    border-radius: 4px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    text-align: center;
+    padding: 0.25rem 0.3rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input.atoms-in:focus { border-color: var(--accent); }
+  input.time-in {
+    width: 54px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    text-align: center;
+    padding: 0.25rem 0.3rem;
+    outline: none;
+  }
+  input.time-in:focus { border-color: #4a5568; }
+
+  .calc-val { color: var(--text2); }
+  .calc-val.highlight { color: #34d399; font-weight: 500; }
+  .calc-val.blue { color: #60a5fa; }
+  .calc-val.amber { color: #fbbf24; }
+  .calc-val.zero { color: var(--text3); }
+
+  /* Totals row */
+  tfoot tr.totals-row td {
+    background: var(--surface2);
+    border-top: 2px solid var(--accent);
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.65rem 0.7rem;
+  }
+  tfoot tr.totals-row td.grand { color: #34d399; font-size: 0.9rem; }
+
+  /* Summary box */
+  .summary {
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 700px) { .summary { grid-template-columns: 1fr; } }
+
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+  }
+  .summary-card h3 {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sum-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid rgba(42,48,69,0.4);
+    font-size: 0.8rem;
+  }
+  .sum-row:last-child { border-bottom: none; }
+  .sum-row .slabel { color: var(--text2); }
+  .sum-row .sval {
+    font-family: var(--mono);
+    font-weight: 500;
+    color: var(--text);
+  }
+  .sum-row.accent .sval { color: #34d399; font-size: 1rem; }
+  .sum-row.final {
+    margin-top: 0.5rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--accent2);
+    border-bottom: none;
+  }
+  .sum-row.final .slabel { color: var(--text); font-weight: 600; }
+  .sum-row.final .sval { color: #34d399; font-size: 1.15rem; }
+
+  .extra-input {
+    width: 90px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    text-align: right;
+    padding: 0.2rem 0.4rem;
+    outline: none;
+  }
+  .extra-input:focus { border-color: var(--accent); }
+
+  .margin-input {
+    width: 55px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent3);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    text-align: right;
+    padding: 0.2rem 0.4rem;
+    outline: none;
+  }
+  .margin-input:focus { border-color: var(--accent3); }
+
+  .note { font-size: 0.7rem; color: var(--text3); max-width: 1400px; margin: 0 auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Υπολογισμός Μισθοδοσίας</h1>
+    <p>3 βάρδιες × 7 ημέρες — Μηνιαίο κόστος με εισφορές &amp; δώρα</p>
+    <span class="badge">► αλλάξτε τα μπλε πεδία</span>
+  </div>
+</div>
+
+<!-- Params -->
+<div class="params-panel">
+  <div class="param-item">
+    <span class="param-label">Μισθός (€)</span>
+    <input class="param-input" id="p_misthos" type="number" value="920" min="0" step="10">
+    <span class="param-note">βάση μισθός</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Επίδομα γάμου %</span>
+    <input class="param-input" id="p_epid_pct" type="number" value="10" min="0" step="1">
+    <span class="param-note">% επί μισθού</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Εισφορές εργοδ. %</span>
+    <input class="param-input" id="p_eisfores" type="number" value="21.79" min="0" step="0.01">
+    <span class="param-note">% επί αποδοχών</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Επίδομα νυκτ. %</span>
+    <input class="param-input" id="p_nykt" type="number" value="25" min="0" step="1">
+    <span class="param-note">% βραδινής βάρδιας</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Επίδ. Κυριακής %</span>
+    <input class="param-input" id="p_kyr" type="number" value="75" min="0" step="1">
+    <span class="param-note">% Κυριακής</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Βραδ. ώρες έναρξη</span>
+    <input class="param-input" id="p_bradu_start" type="number" value="22" min="0" max="23" step="1">
+    <span class="param-note">ώρα έναρξης νύχτας</span>
+  </div>
+  <div class="param-item">
+    <span class="param-label">Βραδ. ώρες λήξη</span>
+    <input class="param-input" id="p_bradu_end" type="number" value="6" min="0" max="23" step="1">
+    <span class="param-note">ώρα λήξης νύχτας</span>
+  </div>
+</div>
+
+<div class="section-title">Πρόγραμμα Βαρδιών</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th class="left grp-time" colspan="1">Βάρδια</th>
+      <th class="grp-time" colspan="2">Ώρες</th>
+      <th class="grp-hours">Ημέρες/μήνα</th>
+      <th class="grp-hours">Ώρες βάρδ.</th>
+      <th class="grp-hours">Ώρες βραδ.</th>
+      <th class="grp-hours">Ώρες Κυρ.</th>
+      <th class="grp-hours">Κυρ+Βραδ</th>
+      <th class="grp-hours">Άτομα</th>
+      <th class="grp-cost">Αποδ. Εργασίας</th>
+      <th class="grp-cost">Επίδ. Νυκτ.</th>
+      <th class="grp-cost">Επίδ. Κυρ.</th>
+      <th class="grp-cost">Κυρ+Βραδ</th>
+      <th class="grp-cost">Σύνολο Αποδ.</th>
+      <th class="grp-cost">Δ/Π+Δ/Χ</th>
+      <th class="grp-cost">Επίδ. Αδείας</th>
+      <th class="grp-cost">Σύνολο μ/δώρα</th>
+      <th class="grp-total">Εισφορές Εργοδ.</th>
+      <th class="grp-total">Γενικό Σύνολο</th>
+      <th class="grp-total">Σύν. Ωρών</th>
+      <th class="grp-total">Κόστος/Ώρα</th>
+      <th class="grp-total">Κόστος/Φύλαξη</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+  <tfoot>
+    <tr class="totals-row" id="totals-row">
+      <td colspan="4" class="label-cell" style="text-align:left;font-weight:600;">ΣΥΝΟΛΑ</td>
+      <td id="t_hours_total"></td>
+      <td id="t_bradu_h"></td>
+      <td id="t_kyr_h"></td>
+      <td id="t_kyrbr_h"></td>
+      <td id="t_atoma"></td>
+      <td id="t_apod"></td>
+      <td id="t_nykt"></td>
+      <td id="t_kyr_e"></td>
+      <td id="t_kyrbr_e"></td>
+      <td id="t_sum_apod"></td>
+      <td id="t_dp"></td>
+      <td id="t_adeia"></td>
+      <td id="t_meta_dora"></td>
+      <td id="t_eisf"></td>
+      <td id="t_geniko" class="grand"></td>
+      <td id="t_sum_wron"></td>
+      <td id="t_cost_wra"></td>
+      <td id="t_cost_ful"></td>
+    </tr>
+  </tfoot>
+</table>
+</div>
+
+<!-- Summary -->
+<div class="section-title">Σύνοψη Κόστους</div>
+<div class="summary">
+  <div class="summary-card">
+    <h3>Κόστος Μισθοδοσίας</h3>
+    <div class="sum-row accent">
+      <span class="slabel">Μηνιαίο κόστος μισθοδοσίας (με δώρα)</span>
+      <span class="sval" id="s_misthos_total">—</span>
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Διοικητικό κόστος (€)</span>
+      <input class="extra-input" id="s_dioi" type="number" value="0" min="0">
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Αναλώσιμα (€)</span>
+      <input class="extra-input" id="s_anal" type="number" value="0" min="0">
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Λοιπά έξοδα (€)</span>
+      <input class="extra-input" id="s_loipa" type="number" value="0" min="0">
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Σύνολο κόστους</span>
+      <span class="sval" id="s_synolo_kostous">—</span>
+    </div>
+  </div>
+  <div class="summary-card">
+    <h3>Τιμολόγηση</h3>
+    <div class="sum-row">
+      <span class="slabel">Κέρδος %</span>
+      <input class="margin-input" id="s_kerdos_pct" type="number" value="10" min="0" step="1"> %
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Κέρδος (€)</span>
+      <span class="sval" id="s_kerdos_eur">—</span>
+    </div>
+    <div class="sum-row">
+      <span class="slabel">Σύνολο χωρίς ΦΠΑ</span>
+      <span class="sval" id="s_xwris_fpa">—</span>
+    </div>
+    <div class="sum-row">
+      <span class="slabel">ΦΠΑ 24%</span>
+      <span class="sval" id="s_fpa">—</span>
+    </div>
+    <div class="sum-row final">
+      <span class="slabel">Τελικό σύνολο με ΦΠΑ</span>
+      <span class="sval" id="s_final">—</span>
+    </div>
+  </div>
+</div>
+
+<p class="note">* Ο υπολογισμός χρησιμοποιεί 365/12/7 (~4,35) ημέρες/μήνα για κάθε βάρδια και 25 ημέρες βάση για Κυριακές (22 για καθημερινές) &nbsp;|&nbsp; Ωρομίσθιο = Μισθός ÷ 25 ÷ 40 × 6</p>
+
+<script>
+const SHIFTS = [
+  {label:'ΔΕΥΤΕΡΑ (ΠΡΩΙ)',    type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΔΕΥΤΕΡΑ (ΑΠΟΓΕΥΜΑ)',type:'apog',  from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΔΕΥΤΕΡΑ (ΒΡΑΔΥ)',   type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:false},
+  {label:'ΤΡΙΤΗ (ΠΡΩΙ)',      type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΤΡΙΤΗ (ΑΠΟΓΕΥΜΑ)', type:'apog',  from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΤΡΙΤΗ (ΒΡΑΔΥ)',    type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:false},
+  {label:'ΤΕΤΑΡΤΗ (ΠΡΩΙ)',   type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΤΕΤΑΡΤΗ (ΑΠΟΓΕΥΜΑ)',type:'apog', from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΤΕΤΑΡΤΗ (ΒΡΑΔΥ)',  type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:false},
+  {label:'ΠΕΜΠΤΗ (ΠΡΩΙ)',    type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΠΕΜΠΤΗ (ΑΠΟΓΕΥΜΑ)',type:'apog',  from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΠΕΜΠΤΗ (ΒΡΑΔΥ)',   type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:false},
+  {label:'ΠΑΡΑΣΚΕΥΗ (ΠΡΩΙ)', type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΠΑΡΑΣΚΕΥΗ (ΑΠΟΓΕΥΜΑ)',type:'apog',from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΠΑΡΑΣΚΕΥΗ (ΒΡΑΔΥ)',type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:false},
+  {label:'ΣΑΒΒΑΤΟ (ΠΡΩΙ)',   type:'proi',  from:'06:00',to:'14:00',isSun:false,nextDaySun:false},
+  {label:'ΣΑΒΒΑΤΟ (ΑΠΟΓΕΥΜΑ)',type:'apog', from:'14:00',to:'22:00',isSun:false,nextDaySun:false},
+  {label:'ΣΑΒΒΑΤΟ (ΒΡΑΔΥ)', type:'bradu', from:'22:00',to:'06:00',isSun:false,nextDaySun:true},
+  {label:'ΚΥΡΙΑΚΗ (ΠΡΩΙ)',   type:'proi',  from:'06:00',to:'14:00',isSun:true, nextDaySun:false},
+  {label:'ΚΥΡΙΑΚΗ (ΑΠΟΓΕΥΜΑ)',type:'apog', from:'14:00',to:'22:00',isSun:true, nextDaySun:false},
+  {label:'ΚΥΡΙΑΚΗ (ΒΡΑΔΥ)', type:'bradu', from:'22:00',to:'06:00',isSun:true, nextDaySun:false},
+];
+
+const DAY_FIRST_ROWS = new Set([0,3,6,9,12,15,18]);
+
+function timeToH(str) {
+  const [h,m] = str.split(':').map(Number);
+  return h + m/60;
+}
+
+// Υπολογισμός ωρών ανά κατηγορία — ΑΜΟΙΒΑΙΑ ΑΠΟΚΛΕΙΣΤΙΚΕΣ:
+//   nightH    = νυχτερινές ώρες Δευτέρα–Σάββατο (ΟΧΙ Κυριακή)
+//   sunH      = ημερήσιες ώρες Κυριακής 06:00–22:00
+//   sunNightH = νυχτερινές ώρες Κυριακής 22:00–06:00
+// isSunStart: η βάρδια ξεκινά Κυριακή | isSunEnd: η επόμενη ημέρα είναι Κυριακή
+function calcHourCategories(fromH, toH, nightStart, nightEnd, isSunStart, isSunEnd) {
+  const endH   = toH < fromH ? toH + 24 : toH;
+  const totalH = endH - fromH;
+
+  function isNightClock(h) {
+    const hmod = ((h % 24) + 24) % 24;
+    return nightStart < nightEnd
+      ? hmod >= nightStart && hmod < nightEnd
+      : hmod >= nightStart || hmod < nightEnd;
+  }
+
+  function isSunday(t) {
+    // Η ημέρα αλλάζει όταν το ρολόι περάσει τα 00:00
+    // fromH + t >= 24 σημαίνει ότι έχουμε περάσει μεσάνυχτα
+    return (fromH + t) < 24 ? isSunStart : isSunEnd;
+  }
+
+  const STEP = 0.25;
+  let nightH = 0, sunH = 0, sunNightH = 0;
+
+  for (let t = 0; t < totalH - 1e-9; t += STEP) {
+    const mid    = t + STEP / 2;
+    const clockH = ((fromH + mid) % 24 + 24) % 24;
+    const night  = isNightClock(clockH);
+    const sun    = isSunday(mid);
+
+    if (sun && night)      sunNightH += STEP;  // Κυριακή βράδυ
+    else if (sun)          sunH      += STEP;  // Κυριακή ημέρα
+    else if (night)        nightH    += STEP;  // Νυχτ. Δευτ–Σαββ
+    // else: απλή ημερήσια εργασία
+  }
+
+  return { nightH, sunH, sunNightH };
+}
+
+function fmt(v, dec=2) {
+  if (v === null || v === undefined || isNaN(v)) return '<span class="calc-val zero">—</span>';
+  if (v === 0) return '<span class="calc-val zero">0</span>';
+  const formatted = v.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `<span class="calc-val">${formatted}</span>`;
+}
+function fmtH(v, dec=1) {
+  if (!v || v===0) return '<span class="calc-val zero">—</span>';
+  return `<span class="calc-val blue">${v.toFixed(dec)}</span>`;
+}
+function fmtE(v) {
+  if (!v || v===0) return '<span class="calc-val zero">—</span>';
+  return `<span class="calc-val highlight">${v.toFixed(2)}</span>`;
+}
+
+function getParams() {
+  const misthos_base = parseFloat(document.getElementById('p_misthos').value)||920;
+  const epid_pct = parseFloat(document.getElementById('p_epid_pct').value)||0;
+  const misthos = misthos_base * (1 + epid_pct/100);
+  const eisfores_pct = parseFloat(document.getElementById('p_eisfores').value)||21.79;
+  const nykt_pct = parseFloat(document.getElementById('p_nykt').value)||25;
+  const kyr_pct = parseFloat(document.getElementById('p_kyr').value)||75;
+  const bradu_start = parseFloat(document.getElementById('p_bradu_start').value)||22;
+  const bradu_end = parseFloat(document.getElementById('p_bradu_end').value)||6;
+  const oromisthio = misthos / 25 / 40 * 6;
+  return {misthos, eisfores_pct, nykt_pct, kyr_pct, bradu_start, bradu_end, oromisthio};
+}
+
+function recalc() {
+  const p = getParams();
+  const tbody = document.getElementById('tbody');
+  const rows = tbody.querySelectorAll('tr');
+
+  let totals = {wh:0,bh:0,kh:0,kbh:0,at:0,apod:0,nykt_e:0,kyr_e:0,kbradu_e:0,sum_apod:0,dp:0,adeia:0,meta:0,eisf:0,geniko:0,swron:0};
+
+  rows.forEach((tr, i) => {
+    const sh = SHIFTS[i];
+    const atoms = parseInt(tr.querySelector('.atoms-in').value)||0;
+    const fromStr = tr.querySelector('.from-in').value;
+    const toStr = tr.querySelector('.to-in').value;
+
+    let fromH = timeToH(fromStr);
+    let toH = timeToH(toStr);
+    let totalH = toH < fromH ? toH + 24 - fromH : toH - fromH;
+
+    // isSunStart: η βάρδια ξεκινά Κυριακή
+    // isSunEnd:   η επόμενη ημέρα είναι Κυριακή (βάρδια Σαββάτου που περνά μεσάνυχτα)
+    const isSunStart = sh.isSun;
+    const isSunEnd   = sh.nextDaySun || false;
+
+    const cats = calcHourCategories(fromH, toH, p.bradu_start, p.bradu_end, isSunStart, isSunEnd);
+    let nightH    = cats.nightH;
+    let sunH      = cats.sunH;
+    let sunBraduH = cats.sunNightH;
+
+    if (atoms === 0) {
+      // empty row
+      const cells = tr.querySelectorAll('.out');
+      cells.forEach(c => c.innerHTML = '<span class="calc-val zero">—</span>');
+      return;
+    }
+
+    // Ημέρες/μήνα: 365 / 12 / 7 (~4.3452)
+    const emeres = 365 / 12 / 7;
+    const divDays = sh.isSun ? 25 : 22;
+
+    // Αποδοχές εργασίας
+    const apod = p.misthos * emeres / divDays * totalH / 8 * atoms;
+    // Νυχτερινό επίδομα
+    const nykt_e = emeres * nightH * p.oromisthio * (p.nykt_pct/100) * atoms;
+    // Κυριακής
+    const kyr_e  = emeres * sunH  * p.oromisthio * (p.kyr_pct/100) * atoms;
+    // Κυρ+Βραδ
+    const kbradu_e = emeres * sunBraduH * p.oromisthio * 1.0 * atoms;
+
+    const sum_apod = apod + nykt_e + kyr_e + kbradu_e;
+    const dp    = sum_apod / 8 * 1.04166;
+    const adeia = sum_apod * 0.04166;
+    const meta  = sum_apod + dp + adeia;
+    const eisf  = meta * (p.eisfores_pct/100);
+    const geniko= meta + eisf;
+    const swron = emeres * totalH * atoms;
+    const cost_wra = swron > 0 ? geniko/swron : 0;
+    const cost_ful = geniko / emeres / atoms;
+
+    // Accumulate
+    totals.wh += emeres*totalH*atoms;
+    totals.bh += emeres*nightH*atoms;
+    totals.kh += emeres*sunH*atoms;
+    totals.kbh+= emeres*sunBraduH*atoms;
+    totals.at += atoms;
+    totals.apod += apod;
+    totals.nykt_e += nykt_e;
+    totals.kyr_e  += kyr_e;
+    totals.kbradu_e += kbradu_e;
+    totals.sum_apod += sum_apod;
+    totals.dp += dp;
+    totals.adeia += adeia;
+    totals.meta += meta;
+    totals.eisf += eisf;
+    totals.geniko += geniko;
+    totals.swron += swron;
+
+    // Render
+    const outs = tr.querySelectorAll('.out');
+    const vals = [
+      fmtH(emeres, 2), fmtH(totalH), fmtH(nightH), fmtH(sunH), fmtH(sunBraduH),
+      fmtE(apod), fmtE(nykt_e), fmtE(kyr_e), fmtE(kbradu_e),
+      fmtE(sum_apod), fmtE(dp), fmtE(adeia), fmtE(meta), fmtE(eisf),
+      `<span class="calc-val amber">${geniko.toFixed(2)}</span>`,
+      fmtH(swron),
+      cost_wra>0?`<span class="calc-val">${cost_wra.toFixed(4)}</span>`:'<span class="calc-val zero">—</span>',
+      `<span class="calc-val">${cost_ful.toFixed(2)}</span>`
+    ];
+    outs.forEach((td,j) => td.innerHTML = vals[j]||'');
+  });
+
+  // Render totals
+  const cw = totals.swron > 0 ? totals.geniko/totals.swron : 0;
+  const emeresMonth = 365 / 12 / 7;
+  document.getElementById('t_hours_total').innerHTML = fmtH(totals.wh);
+  document.getElementById('t_bradu_h').innerHTML = fmtH(totals.bh);
+  document.getElementById('t_kyr_h').innerHTML = fmtH(totals.kh);
+  document.getElementById('t_kyrbr_h').innerHTML = fmtH(totals.kbh);
+  document.getElementById('t_atoma').innerHTML = `<span class="calc-val">${totals.at}</span>`;
+  document.getElementById('t_apod').innerHTML = fmtE(totals.apod);
+  document.getElementById('t_nykt').innerHTML = fmtE(totals.nykt_e);
+  document.getElementById('t_kyr_e').innerHTML = fmtE(totals.kyr_e);
+  document.getElementById('t_kyrbr_e').innerHTML = fmtE(totals.kbradu_e);
+  document.getElementById('t_sum_apod').innerHTML = fmtE(totals.sum_apod);
+  document.getElementById('t_dp').innerHTML = fmtE(totals.dp);
+  document.getElementById('t_adeia').innerHTML = fmtE(totals.adeia);
+  document.getElementById('t_meta_dora').innerHTML = fmtE(totals.meta);
+  document.getElementById('t_eisf').innerHTML = fmtE(totals.eisf);
+  document.getElementById('t_geniko').innerHTML = `${totals.geniko.toFixed(2)} €`;
+  document.getElementById('t_sum_wron').innerHTML = fmtH(totals.swron);
+  document.getElementById('t_cost_wra').innerHTML = cw>0?`<span class="calc-val">${cw.toFixed(4)}</span>`:'—';
+  document.getElementById('t_cost_ful').innerHTML = `<span class="calc-val">${(totals.geniko/emeresMonth/totals.at||0).toFixed(2)}</span>`;
+
+  // Summary
+  document.getElementById('s_misthos_total').textContent = totals.geniko.toFixed(2) + ' €';
+  const dioi  = parseFloat(document.getElementById('s_dioi').value)||0;
+  const anal  = parseFloat(document.getElementById('s_anal').value)||0;
+  const loipa = parseFloat(document.getElementById('s_loipa').value)||0;
+  const synolo = totals.geniko + dioi + anal + loipa;
+  const kpct = parseFloat(document.getElementById('s_kerdos_pct').value)||10;
+  const kerdos = synolo * kpct / 100;
+  const xwris = synolo + kerdos;
+  const fpa = xwris * 0.24;
+  const final = xwris + fpa;
+  document.getElementById('s_synolo_kostous').textContent = synolo.toFixed(2) + ' €';
+  document.getElementById('s_kerdos_eur').textContent = kerdos.toFixed(2) + ' €';
+  document.getElementById('s_xwris_fpa').textContent = xwris.toFixed(2) + ' €';
+  document.getElementById('s_fpa').textContent = fpa.toFixed(2) + ' €';
+  document.getElementById('s_final').textContent = final.toFixed(2) + ' €';
+}
+
+// Build rows
+function buildTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  // Default atoms from Excel
+  const defaultAtoms = [0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0];
+
+  SHIFTS.forEach((sh, i) => {
+    const tr = document.createElement('tr');
+    if (DAY_FIRST_ROWS.has(i)) tr.classList.add('day-first');
+    const vardioCls = sh.type;
+    const vardioLabel = sh.type==='proi'?'ΠΡΩΙ':sh.type==='apog'?'ΑΠΟΓ':'ΒΡΑΔΥ';
+
+    tr.innerHTML = `
+      <td class="label-cell">${sh.label.replace(/\s*\(.*\)/,'')}<span class="vardio ${vardioCls}">${vardioLabel}</span></td>
+      <td><input class="time-in from-in" type="text" value="${sh.from}"></td>
+      <td><input class="time-in to-in" type="text" value="${sh.to}"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td><input class="atoms-in" type="number" min="0" value="${defaultAtoms[i]||0}"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+      <td class="out"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  tbody.addEventListener('input', recalc);
+}
+
+// Param listeners
+document.querySelectorAll('.param-input, .extra-input, .margin-input').forEach(el => {
+  el.addEventListener('input', recalc);
+});
+document.querySelectorAll('#s_dioi,#s_anal,#s_loipa,#s_kerdos_pct').forEach(el=>{
+  el.addEventListener('input', recalc);
+});
+
+buildTable();
+recalc();
+</script>
+</body>
+</html>

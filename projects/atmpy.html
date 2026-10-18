@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Προσομοίωση ΑΤΜ με Python (PyScript)</title>
+    
+    <!-- Εισαγωγή του PyScript για να τρέξει η Python στον Browser -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+    <style>
+        :root {
+            --atm-bg: #1a1a24;
+            --screen-bg: #0d2b1d;
+            --screen-text: #39ff14;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+
+        .atm-container {
+            background-color: var(--atm-bg);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 450px;
+            border: 4px solid #34495e;
+        }
+
+        .atm-screen {
+            background-color: var(--screen-bg);
+            border: 5px solid #222;
+            border-radius: 5px;
+            padding: 20px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .screen-output {
+            color: var(--screen-text);
+            font-size: 1.1rem;
+            line-height: 1.4;
+            white-space: pre-line;
+        }
+
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .atm-input {
+            flex: 1;
+            padding: 12px;
+            font-size: 1.1rem;
+            border: 2px solid #555;
+            border-radius: 5px;
+            background-color: #fff;
+            color: #000;
+            text-align: center;
+        }
+
+        .atm-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .choice-buttons {
+            display: none;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .btn-yes { background-color: #27ae60; color: white; border: none; padding: 10px 25px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        .btn-no { background-color: #c0392b; color: white; border: none; padding: 10px 25px; font-size: 1rem; border-radius: 5px; cursor: pointer; font-weight: bold;}
+
+        .atm-vault {
+            margin-top: 25px;
+            background-color: #2c3e50;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px dashed #7f8c8d;
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.9rem;
+        }
+        .vault-title {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #bdc3c7;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Προσομοιωτής ΑΤΜ (Powered by Python)</h1>
+    
+    <div class="atm-container">
+        <!-- Οθόνη ΑΤΜ -->
+        <div class="atm-screen">
+            <div class="screen-output" id="screen-text">Αρχικοποίηση Python Environment...</div>
+        </div>
+
+        <!-- Φόρμα Εισαγωγής -->
+        <div class="input-area" id="input-container">
+            <input type="text" id="atm-input" class="atm-input" autocomplete="off">
+            <button class="atm-btn" id="submit-btn">OK</button>
+        </div>
+
+        <!-- Κουμπιά Επιλογής Ναι/Όχι -->
+        <div class="choice-buttons" id="choice-container">
+            <button class="btn-yes" id="btn-yes">ΝΑΙ</button>
+            <button class="btn-no" id="btn-no">ΟΧΙ</button>
+        </div>
+
+        <!-- Ένδειξη Αποθέματος για τον Διαχειριστή -->
+        <div class="vault-title" style="margin-top: 20px;">Απόθεμα Χαρτονομισμάτων (Διαχειριστής)</div>
+        <div class="atm-vault">
+            <div>Χαρτονομίσματα 50€: <span id="vault-50">100</span></div>
+            <div>Χαρτονομίσματα 20€: <span id="vault-20">100</span></div>
+        </div>
+    </div>
+
+    <!-- ΕΔΩ ΕΚΤΕΛΕΙΤΑΙ Η PYTHON -->
+    <script type="py">
+        from js import window, setTimeout
+        from pyscript import when  # Χρήση του επίσημου decorator για event handling
+
+        document = window.document
+
+        # Αρχικές μεταβλητές Python
+        bills_20 = 100
+        bills_50 = 100
+        current_step = "CARD"
+        card_number = ""
+        correct_pin = ""
+
+        def update_vault_display():
+            document.getElementById("vault-50").innerText = str(bills_50)
+            document.getElementById("vault-20").innerText = str(bills_20)
+
+        def init_atm(*args):
+            global current_step, card_number, correct_pin
+            current_step = "CARD"
+            card_number = ""
+            correct_pin = ""
+            
+            atm_input = document.getElementById("atm-input")
+            atm_input.value = ""
+            atm_input.type = "text"
+            atm_input.setAttribute("maxlength", "16")
+            atm_input.placeholder = "16 ψηφία"
+            
+            document.getElementById("input-container").style.display = "flex"
+            document.getElementById("choice-container").style.display = "none"
+            document.getElementById("screen-text").innerText = "ΚΑΛΩΣΗΡΘΑΤΕ!\n\nΠαρακαλώ εισάγετε τον αριθμό της κάρτας σας (16 ψηφία) και πατήστε OK:"
+            update_vault_display()
+
+        # Σύνδεση με το κουμπί OK
+        @when("click", "#submit-btn")
+        def handle_input(event):
+            global current_step, card_number, correct_pin, bills_50, bills_20
+            atm_input = document.getElementById("atm-input")
+            screen_text = document.getElementById("screen-text")
+            value = atm_input.value.strip()
+
+            if current_step == "CARD":
+                if len(value) == 16 and value.isdigit():
+                    card_number = value
+                    correct_pin = value[-4:]
+                    current_step = "PIN"
+                    atm_input.value = ""
+                    atm_input.type = "password"
+                    atm_input.setAttribute("maxlength", "4")
+                    atm_input.placeholder = "4 ψηφία"
+                    screen_text.innerText = "ΚΑΡΤΑ ΔΕΚΤΗ.\n\nΠαρακαλώ πληκτρολογήστε το PIN σας (τα 4 τελευταία ψηφία της κάρτας):"
+                else:
+                    screen_text.innerText = "ΛΑΘΟΣ ΑΡΙΘΜΟΣ ΚΑΡΤΑΣ!\n\nΠρέπει να πληκτρολογήσετε ακριβώς 16 ψηφία.\nΠροσπαθήστε ξανά:"
+                    atm_input.value = ""
+                    
+            elif current_step == "PIN":
+                if value == correct_pin:
+                    current_step = "AMOUNT"
+                    atm_input.value = ""
+                    atm_input.type = "text"
+                    atm_input.setAttribute("maxlength", "6")
+                    atm_input.placeholder = "Ποσό σε €"
+                    screen_text.innerText = "ΕΓΚΥΡΟ PIN.\n\nΠληκτρολογήστε το ποσό που επιθυμείτε για ανάληψη (χαρτονομίσματα των 20€ και 50€):"
+                else:
+                    screen_text.innerText = "ΛΑΘΟΣ PIN!\n\nΠαρακαλώ προσπαθήστε ξανά:"
+                    atm_input.value = ""
+                    
+            elif current_step == "AMOUNT":
+                if not value.isdigit() or int(value) <= 0:
+                    screen_text.innerText = "ΜΗ ΕΓΚΥΡΟ ΠΟΣΟ!\n\nΞαναπληκτρολογήστε σωστά το ποσό:"
+                    atm_input.value = ""
+                    return
+                
+                amount = int(value)
+                dispense_50 = 0
+                dispense_20 = 0
+                temp_50 = min(amount // 50, bills_50)
+                found_combination = False
+
+                while temp_50 >= 0:
+                    remainder = amount - (temp_50 * 50)
+                    if remainder % 20 == 0:
+                        temp_20 = remainder // 20
+                        if temp_20 <= bills_20:
+                            dispense_50 = temp_50
+                            dispense_20 = temp_20
+                            found_combination = True
+                            break
+                    temp_50 -= 1
+
+                if found_combination:
+                    bills_50 -= dispense_50
+                    bills_20 -= dispense_20
+                    update_vault_display()
+
+                    screen_text.innerText = f"Η ΑΝΑΛΗΨΗ ΟΛΟΚΛΗΡΩΘΗΚΕ!\n\nΈκδοση:\n- {dispense_50} χαρτονομίσματα των 50€\n- {dispense_20} χαρτονομίσματα των 20€\n\nΘέλετε να κάνετε κάποια επιπλέον συναλλαγή;"
+                    current_step = "EXTRA_TRANSACTION"
+                    document.getElementById("input-container").style.display = "none"
+                    document.getElementById("choice-container").style.display = "flex"
+                else:
+                    screen_text.innerText = "ΑΔΥΝΑΜΙΑ ΕΞΥΠΗΡΕΤΗΣΗΣ ΠΟΣΟΥ!\n\nΤο ποσό δεν βγαίνει με 20€/50€ ή το ΑΤΜ δεν έχει αρκετό απόθεμα.\n\nΞαναπληκτρολογήστε άλλο ποσό:"
+                    atm_input.value = ""
+
+        # Σύνδεση με το κουμπί ΝΑΙ
+        @when("click", "#btn-yes")
+        def handle_choice_yes(event):
+            global current_step
+            current_step = "AMOUNT"
+            atm_input = document.getElementById("atm-input")
+            atm_input.value = ""
+            atm_input.type = "text"
+            atm_input.setAttribute("maxlength", "6")
+            atm_input.placeholder = "Ποσό σε €"
+            document.getElementById("input-container").style.display = "flex"
+            document.getElementById("choice-container").style.display = "none"
+            document.getElementById("screen-text").innerText = "Πληκτρολογήστε το επόμενο ποσό που επιθυμείτε για ανάληψη:"
+
+        # Σύνδεση με το κουμπί ΟΧΙ
+        @when("click", "#btn-no")
+        def handle_choice_no(event):
+            document.getElementById("input-container").style.display = "none"
+            document.getElementById("choice-container").style.display = "none"
+            document.getElementById("screen-text").innerText = "ΠΑΡΑΚΑΛΩ ΠΑΡΤΕ ΤΗΝ ΚΑΡΤΑ ΣΑΣ!\n\nΣας ευχαριστούμε για τη συναλλαγή."
+            
+            # Δημιουργία ασφαλούς wrapper για τη setTimeout
+            def reset_call():
+                init_atm()
+            setTimeout(reset_call, 4000)
+
+        # Υποστήριξη του πλήκτρου Enter στο πληκτρολόγιο
+        @when("keydown", "#atm-input")
+        def handle_keypress(event):
+            if event.key == "Enter":
+                handle_input(event)
+
+        # Εκκίνηση μόλις φορτώσει η Python
+        init_atm()
+    </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+	<meta charset="UTF-8">
+	<title>Demo Bank :: ATM</title>
+	<style>
+		header{
+			background-color: blue;
+			color: yellow;
+			text-align: center;
+			font-size: 50px;
+			font-style: italic;
+		}
+		table{
+			text-align: center;
+		}
+		#tablescreen{
+			background-color: lightgreen;
+			border-radius: 15px;
+			font-size: 26px;
+		}
+		.numbutton{
+			padding: 20px 27px;
+			border-radius: 10px;
+			font-size: 20px;
+		}
+		.sidebutton{
+			padding: 20px 30px;
+			border-radius: 10px;
+			font-size: 20px;
+		}
+		.s3button{
+			padding: 20px 45px;
+			border-radius: 10px;
+			font-size: 20px;
+		}
+	</style>
+</head>
+<body>
+<header>
+	<br>Demo Bank<br><br>
+</header>
+
+<br>
+
+<table align="center">
+	<tr height="80">
+		<td width="100"><button type="button" class="sidebutton" id="button1"></button></td>
+		<td width="600" colspan="3" rowspan="3">
+			<table id="tablescreen">
+				<tr height="80">
+					<td width="100" id="choice1" class="choices"></td>
+					<td width="400" id="screen" rowspan="3">Τεχνικό πρόβλημα<br>Προσπάθηστε ξανά σε λίγο</td>
+					<td width="100" class="choices" id="choice2"></td>
+				</tr>
+				<tr height="80">
+					<td width="100" class="choices" id="choice3"></td>
+					<td width="100" class="choices" id="choice4"></td>
+				</tr>
+				<tr height="80">
+					<td width="100" class="choices" id="choice5"></td>
+					<td width="100" class="choices" id="choice6"></td>
+				</tr>
+			</table></td>
+		<td width="100"><button type="button" class="sidebutton" id="button2"></button></td>
+	</tr>
+	<tr height="80">
+		<td><button type="button" class="sidebutton" id="button3"></button></td>
+		<td><button type="button" class="sidebutton" id="button4"></button></td>
+	</tr>
+	<tr height="80">
+		<td><button type="button" class="sidebutton" id="button5"></button></td>
+		<td><button type="button" class="sidebutton" id="button6"></button></td>
+	</tr>
+</table>
+<br><br>
+<table align="center" id="numpad">
+	<tr>
+		<td><button type="button" class="numbutton" id="numbutton1">1</button></td>
+		<td><button type="button" class="numbutton" id="numbutton2">2</button></td>
+		<td><button type="button" class="numbutton" id="numbutton3">3</button></td>
+		<td width="10"></td>
+		<td width="200"><button type="button" class="s3button" id="backspacebutton">Διόρθωση</button></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="numbutton" id="numbutton4">4</button></td>
+		<td><button type="button" class="numbutton" id="numbutton5">5</button></td>
+		<td><button type="button" class="numbutton" id="numbutton6">6</button></td>
+		<td width="10"></td>
+		<td width="200"><button type="button" class="s3button" id="clearbutton">Ακύρωση</button></td>
+	</tr>
+	<tr>
+		<td><button type="button" class="numbutton" id="numbutton7">7</button></td>
+		<td><button type="button" class="numbutton" id="numbutton8">8</button></td>
+		<td><button type="button" class="numbutton" id="numbutton9">9</button></td>
+		<td width="10"></td>
+		<td width="200"><button type="button" class="s3button" id="enterbutton">Εκτέλεση</button></td>
+	</tr>
+	<tr>
+		<td></td>
+		<td><button type="button" class="numbutton" id="numbutton0">0</button></td>
+		<td></td>
+	</tr>
+</table>
+
+<script>
+// --- Αρχικός ορισμός μεταβλητών ---
+let screenStep = "insertcard";	// διαθέσιμα step insertcard, insertpin, transactions, analipsi, ypoloipo
+const screenEl = document.getElementById('screen');
+let screenMessage = "Καλώς ήρθατε στην Demo Bank<br><br>Πληκτρολογίστε<br>τον αριθμό της κάρτας σας<br><i>(16 ψηφία)</i><br>";
+screenEl.innerHTML = screenMessage;
+let cardnumber = "";
+let pinnumber = "";
+let truepin = "";			
+let choice1El = document.getElementById('choice1');
+let choice2El = document.getElementById('choice2');
+let choice3El = document.getElementById('choice3');
+let choice4El = document.getElementById('choice4');
+let choice5El = document.getElementById('choice5');
+let choice6El = document.getElementById('choice6');
+let currentBalance = Math.floor((Math.random() * 1000) + 1);
+
+
+// --- Κουμπιά Διόρθωση, Ακύρωση, Εκτέλεση ---
+const clearBtn = document.getElementById('clearbutton');
+const backspaceBtn = document.getElementById('backspacebutton');
+const enterBtn = document.getElementById('enterbutton');
+// Λειτουργία Clear: Σβήνει τα πάντα (αδειάζει το κείμενο)
+clearBtn.addEventListener('click', () => {
+	if(screenStep == "insertcard") {
+		cardnumber = "";
+	} 
+	if(screenStep == "insertpin") {
+		pinnumber = "";
+	}
+    screenEl.innerHTML = screenMessage;
+});
+// Λειτουργία Backspace: Σβήνει μόνο το τελευταίο ψηφίο
+backspaceBtn.addEventListener('click', () => {
+    if (screenStep === "insertcard" && cardnumber.length > 0) {
+        cardnumber = cardnumber.slice(0, -1);
+        screenEl.innerHTML = screenMessage + cardnumber;
+    } else if (screenStep === "insertpin" && pinnumber.length > 0) {
+        pinnumber = pinnumber.slice(0, -1);
+        screenEl.innerHTML = screenMessage + pinnumber;
+    }
+});
+
+
+
+
+// --- Κυρίως πρόγραμμα ---
+
+const numbuttons = document.querySelectorAll('.numbutton');
+numbuttons.forEach(button => {
+    button.addEventListener('click', () => {
+        if (screenStep === "insertcard") {
+            if (cardnumber.length >= 16) return;
+            cardnumber += button.innerText;
+            screenEl.innerHTML = screenMessage + cardnumber;
+        } else if (screenStep === "insertpin") {
+            if (pinnumber.length >= 4) return;
+            pinnumber += button.innerText;
+            screenEl.innerHTML = screenMessage + pinnumber;
+        }
+    });
+});
+
+// --- Λειτουργίες του enterbutton για κάθε screenStep ---
+document.getElementById("enterbutton").onclick = function() {		
+	if(screenStep == "insertcard") {		// EnterButton in ScreenStep InsertCard
+		entButInsCard();
+	}
+	else if(screenStep == "insertpin") {
+		entButInsPin();		
+	}
+};
+
+// --- Λειτουργίες των SideButtons για κάθε screenStep ---
+document.getElementById("button1").onclick = function() {		// Button 1
+	if(screenStep == "transactions") {
+		choice1Trans();
+	} else if(screenStep == "analipsi") {
+		choice1Anal();
+	}
+}
+
+document.getElementById("button2").onclick = function() {		// Button 2
+	if(screenStep == "analipsi") {
+		choice1Ana2();
+	}
+}	
+
+document.getElementById("button3").onclick = function() {		// Button 3
+	if(screenStep == "analipsi") {
+		choice1Ana3();
+	}
+}
+
+document.getElementById("button4").onclick = function() {		// Button 4
+	if(screenStep == "analipsi") {
+		choice1Ana4();
+	}
+}
+
+document.getElementById("button5").onclick = function() {		// Button 5
+	if(screenStep == "transactions") {
+		choice5Trans();
+	} else if(screenStep == "analipsi") {
+		choice5Anal();
+	}
+}
+
+document.getElementById("button6").onclick = function() {		// Button 6
+	if(screenStep == "transactions") {
+		choice6Trans();
+	} else if (screenStep == "ypoloipo") {
+		choice6Ypol();
+	} else if(screenStep == "analipsi") {
+		choice6Anal();
+	}
+}
+
+
+
+
+
+
+
+
+
+// Βοηθητικές εκτυπώσεις
+
+console.log(screenStep);
+console.log(`currentBalance = ${currentBalance}`);
+
+
+
+// functions
+// --- EnterButton in ScreenStep InsertCard ---
+function entButInsCard() {
+	if (cardnumber.length == 16) {
+		console.log(cardnumber);
+		screenStep = "insertpin";
+		console.log(screenStep);
+		truepin = cardnumber.slice(-4); 	
+		console.log(truepin);
+		screenMessage = "Εισάγετε το pin της κάρτας σας<br><i>(τα 4 τελευταία ψηφία<br>της κάρτας σας)</i><br>"
+		screenEl.innerHTML = screenMessage;
+	} else {
+		screenMessage = "Λάθος αριθμός κάρτας<br><br>Πληκτρολογίστε τον αριθμό της κάρτας σας<br><i>(16 ψηφία)</i><br>";
+		screenEl.innerHTML = screenMessage;
+		cardnumber = "";
+	}
+}
+
+
+// --- EnterButton in ScreenStep InsertPin ---
+function entButInsPin() {
+	console.log(truepin, pinnumber);
+	if(truepin == pinnumber){
+		screenStep = "transactions";
+		console.log(screenStep);
+		screenMessage = "Επιλέξτε εργασία";
+		screenEl.innerHTML = screenMessage;
+		choice1El.innerHTML = "Ανάληψη";
+		choice2El.innerHTML = "Online<br>Κατάθεση";
+		choice3El.innerHTML = "";
+		choice4El.innerHTML = "";
+		choice5El.innerHTML = "Ερώτηση<br>υπολοίπου";
+		choice6El.innerHTML = "Έξοδος";
+	} else {
+		pinnumber = "";
+		console.log(truepin, pinnumber);
+		screenMessage = "Εισάγετε το pin της κάρτας σας<br><i>(τα 4 τελευταία ψηφία<br>της κάρτας σας)</i><br>";
+		screenEl.innerHTML = screenMessage;	
+	}
+}
+
+
+// --- Choice1 Button in ScreenStep transactions (Ανάληψη) ---
+function choice1Trans(){
+	screenMessage = "Επιλέξτε το ποσό που θέλετε<br>να κάνετε ανάληψη <br>ή πληκτρολογήστε το ποσό<br>";
+	screenEl.innerHTML = screenMessage;
+	choice1El.innerHTML = "50,00 €";
+	choice2El.innerHTML = "200,00 €";
+	choice3El.innerHTML = "80,00 €";
+	choice4El.innerHTML = "400,00 €";
+	choice5El.innerHTML = "100,00 €";
+	choice6El.innerHTML = "Επιστροφή";
+	screenStep="analipsi";
+}
+
+// --- Choice1 Button in ScreenStep analipsi (Ανάληψη) ---
+function choice1Anal(){
+	if(currentBalance >= 50){
+		currentBalance -=50;
+		screenMessage = "Ολοκληρώθηκε η συναλλαγή<br>Ανάληψη 50,00 ευρώ<br><br>Το νέο υπόλοιπο του λογαριασμού σας είναι " +currentBalance.toFixed(2)+" ευρώ";
+		screenEl.innerHTML = screenMessage;
+		choice1El.innerHTML = "";
+		choice2El.innerHTML = "";
+		choice3El.innerHTML = "";
+		choice4El.innerHTML = "";
+		choice5El.innerHTML = "Έξοδος";
+		choice6El.innerHTML = "Νέα<br>συναλλαγή";
+	} else {
+		screenMessage = "Μη διαθέσιμο υπόλοιπο στον λογαριασμό σας<br>Επιλέξτε άλλο ποσό για ανάληψη<br>Το υπόλοιπο του λογαριασμού σας είναι " +currentBalance.toFixed(2)+" ευρώ";
+		screenEl.innerHTML = screenMessage;
+		choice1El.innerHTML = "";
+		choice2El.innerHTML = "";
+		choice3El.innerHTML = "";
+		choice4El.innerHTML = "";
+		choice5El.innerHTML = "Έξοδος";
+		choice6El.innerHTML = "Νέα<br>συναλλαγή";
+	}
+}
+
+
+// --- Choice5 Button in ScreenStep Transactions (Ερώτηση υπολοίπου) ---
+function choice5Trans(){
+	screenMessage = "Το υπόλοιπο του λογαριασμού σας <br>είναι " +currentBalance.toFixed(2)+" ευρώ";
+	screenEl.innerHTML = screenMessage;	
+	choice1El.innerHTML = "";
+	choice2El.innerHTML = "";
+	choice3El.innerHTML = "";
+	choice4El.innerHTML = "";
+	choice5El.innerHTML = "";
+	choice6El.innerHTML = "Επιστροφή";
+	screenStep="ypoloipo";
+	
+	console.log(screenStep);
+}
+
+// --- Choice6 Button in ScreenStep transactions (Έξοδος) ---
+function choice6Trans(){
+	init();
+}
+		
+// --- Choice6 Button in ScreenStep ypoloipo (Ερώτηση υπολοίπου) ---
+function choice6Ypol(){
+	screenStep = "transactions";
+	console.log(screenStep);
+	screenMessage = "Επιλέξτε εργασία";
+	screenEl.innerHTML = screenMessage;
+	choice1El.innerHTML = "Ανάληψη";
+	choice2El.innerHTML = "Online<br>Κατάθεση";
+	choice3El.innerHTML = "";
+	choice4El.innerHTML = "";
+	choice5El.innerHTML = "Ερώτηση<br>υπολοίπου";
+	choice6El.innerHTML = "Έξοδος";
+}
+
+
+// --- Αρχικοποίηση (init) ---
+function init(){
+	screenStep = "insertcard";
+	screenMessage = "Καλώς ήρθατε στην Demo Bank<br><br>Πληκτρολογίστε<br>τον αριθμό της κάρτας σας<br><i>(16 ψηφία)</i><br>";
+	screenEl.innerHTML = screenMessage;	
+	choice1El.innerHTML = "";
+	choice2El.innerHTML = "";
+	choice3El.innerHTML = "";
+	choice4El.innerHTML = "";
+	choice5El.innerHTML = "";
+	choice6El.innerHTML = "";
+	cardnumber = "";
+	pinnumber = "";
+	truepin = "";			
+	
+	console.log(screenStep);
+}
+
+	
+</script>
+</body>
+</html>
